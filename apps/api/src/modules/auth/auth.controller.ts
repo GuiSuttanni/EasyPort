@@ -46,7 +46,7 @@ export async function registerHandler(
   const refreshToken = jwt.sign(
     { userId: user.id, email: user.email, type: 'refresh' },
     process.env.JWT_REFRESH_SECRET || 'refresh_secret',
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any }
   );
 
   return reply.status(201).send({
@@ -95,7 +95,7 @@ export async function loginHandler(
   const refreshToken = jwt.sign(
     { userId: user.id, email: user.email, type: 'refresh' },
     process.env.JWT_REFRESH_SECRET || 'refresh_secret',
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any }
   );
 
   return reply.send({
@@ -139,7 +139,7 @@ export async function refreshHandler(
     const newRefreshToken = jwt.sign(
       { userId: user.id, email: user.email, type: 'refresh' },
       process.env.JWT_REFRESH_SECRET || 'refresh_secret',
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+      { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any }
     );
 
     return reply.send({
