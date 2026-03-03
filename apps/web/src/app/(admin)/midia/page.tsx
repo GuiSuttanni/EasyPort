@@ -2,17 +2,23 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Image as ImageIcon, Video, X } from 'lucide-react';
+import { Trash2, Image as ImageIcon, Video, X, FolderOpen } from 'lucide-react';
 import { useGetMedia, useUploadMedia, useDeleteMedia } from '@/hooks/useMedia';
+import { useGetProjects } from '@/hooks/useProjects';
 import { FileUpload } from '@/components/admin/FileUpload';
-import { Media } from '@/types';
+import { Media, Project } from '@/types';
 import Image from 'next/image';
 
 export default function MidiaPage() {
-  const { data: media, isLoading } = useGetMedia();
+  const { data: standaloneMedia, isLoading } = useGetMedia();
+  const { data: projects } = useGetProjects();
   const uploadMedia = useUploadMedia();
   const deleteMedia = useDeleteMedia();
   const [lightbox, setLightbox] = useState<Media | null>(null);
+
+  // Separa mídias sem projeto das mídias de projetos
+  const onlyStandalone = (standaloneMedia ?? []).filter((m: Media) => !m.projectId);
+  const projectsWithMedia = (projects ?? []).filter((p: Project) => (p.media?.length ?? 0) > 0);
 
   const handleUpload = async (files: File[], onProgress: (p: number) => void) => {
     await uploadMedia.mutateAsync({ files, onProgress });
@@ -22,6 +28,45 @@ export default function MidiaPage() {
     if (!confirm('Remover esta mídia permanentemente?')) return;
     await deleteMedia.mutateAsync(item.id);
   };
+
+  const MediaGrid = ({ items }: { items: Media[] }) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <AnimatePresence>
+        {items.map((item) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group cursor-pointer"
+            onClick={() => setLightbox(item)}
+          >
+            {item.type === 'IMAGE' ? (
+              <Image
+                src={item.url}
+                alt={item.caption || ''}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                <Video size={28} className="text-white/80" />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+                className="p-2 bg-red-500 text-white rounded-xl hover:bg-red-600 shadow-lg"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -36,66 +81,44 @@ export default function MidiaPage() {
         <FileUpload onUpload={handleUpload} />
       </div>
 
-      {/* Galeria */}
+      {/* Galeria agrupada */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="skeleton aspect-square rounded-2xl" />
+            <div key={i} className="skeleton aspect-square rounded-xl" />
           ))}
         </div>
-      ) : !media?.length ? (
+      ) : (onlyStandalone.length === 0 && projectsWithMedia.length === 0) ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
           <ImageIcon size={48} className="text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 font-medium">Nenhuma mídia ainda</p>
-          <p className="text-gray-300 text-sm mt-1">Envie suas fotos e vídeos acima</p>
+          <p className="text-gray-300 text-sm mt-1">Envie suas fotos e vídeos acima ou adicione imagens a um projeto</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <AnimatePresence>
-            {media.map((item: Media) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 group cursor-pointer"
-                onClick={() => setLightbox(item)}
-              >
-                {item.type === 'IMAGE' ? (
-                  <Image
-                    src={item.url}
-                    alt={item.caption || ''}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                    <Video size={32} className="text-white/80" />
-                    <span className="absolute bottom-2 right-2 text-xs text-white/60 bg-black/40 px-1.5 py-0.5 rounded">
-                      Vídeo
-                    </span>
-                  </div>
-                )}
+        <div className="space-y-8">
+          {/* Mídias de projetos */}
+          {projectsWithMedia.map((project: Project) => (
+            <div key={project.id}>
+              <div className="flex items-center gap-2 mb-3">
+                <FolderOpen size={16} className="text-primary-500" />
+                <h2 className="text-sm font-semibold text-gray-700">{project.title}</h2>
+                <span className="text-xs text-gray-400">({project.media?.length} foto{project.media?.length !== 1 ? 's' : ''})</span>
+              </div>
+              <MediaGrid items={project.media ?? []} />
+            </div>
+          ))}
 
-                {/* Overlay com ações */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
-                    className="p-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-lg"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                {item.caption && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white text-xs truncate">{item.caption}</p>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {/* Mídias gerais (sem projeto) */}
+          {onlyStandalone.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <ImageIcon size={16} className="text-gray-400" />
+                <h2 className="text-sm font-semibold text-gray-700">Galeria geral</h2>
+                <span className="text-xs text-gray-400">({onlyStandalone.length} arquivo{onlyStandalone.length !== 1 ? 's' : ''})</span>
+              </div>
+              <MediaGrid items={onlyStandalone} />
+            </div>
+          )}
         </div>
       )}
 

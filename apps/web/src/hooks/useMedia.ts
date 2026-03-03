@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadApi, api } from '@/lib/api';
 import { Media } from '@/types';
 import { toast } from 'sonner';
+import { PROJECTS_QUERY_KEY } from './useProjects';
 
 export const MEDIA_QUERY_KEY = (projectId?: string) =>
   projectId ? ['media', projectId] : ['media'];
@@ -52,6 +53,7 @@ export function useUploadMedia(options?: { projectId?: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY(options?.projectId) });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY });
       toast.success('Mídia(s) enviada(s) com sucesso!');
     },
     onError: () => {
@@ -71,6 +73,7 @@ export function useDeleteMedia() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY });
       toast.success('Mídia removida com sucesso!');
     },
     onError: () => {

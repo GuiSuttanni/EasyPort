@@ -5,6 +5,7 @@ import {
   updateMyCatalogHandler,
   getPublicCatalogHandler,
   getDashboardStatsHandler,
+  uploadImageHandler,
 } from './catalog.controller';
 import { updateCatalogSchema } from './catalog.schema';
 
@@ -30,6 +31,11 @@ export async function catalogRoutes(fastify: FastifyInstance) {
       },
     ],
     handler: updateMyCatalogHandler.bind(fastify),
+  });
+
+  fastify.post('/image', {
+    preHandler: [authenticate],
+    handler: uploadImageHandler.bind(fastify),
   });
 
   fastify.get('/dashboard/stats', {

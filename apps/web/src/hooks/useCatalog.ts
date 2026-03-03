@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, uploadApi } from '@/lib/api';
 import { Catalog, DashboardStats } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { toast } from 'sonner';
@@ -51,5 +51,29 @@ export function useUpdateCatalog() {
     onError: () => {
       toast.error('Erro ao atualizar catálogo. Tente novamente.');
     },
+  });
+}
+
+export function useUploadCatalogImage() {
+  const queryClient = useQueryClient();
+  const updateCatalogStore = useAuthStore((s) => s.updateCatalog);
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('files', file);
+      const { data } = await uploadApi.post<{ success: boolean; data: { url: string; catalog: Catalog } }>(
+        `/catalog/image`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      return data.data!;
+    },
+    onSuccess: ({ catalog }) => {
+      queryClient.setQueryData(CATALOG_QUERY_KEY, catalog);
+      updateCatalogStore(catalog);
+      toast.success('Foto de capa atualizada!');
+    },
+    onError: () => toast.error('Erro ao enviar imagem.'),
   });
 }

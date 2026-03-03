@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { UpdateCatalogInput } from './catalog.schema';
 import { generateUniqueSlug } from '../../utils/slug';
+import { pipeline } from 'stream/promises';
+import { Readable } from 'stream';
 
 const CATALOG_INCLUDE = {
   categories: { orderBy: { order: 'asc' as const } },
@@ -107,4 +109,50 @@ export async function getDashboardStatsHandler(
       publicUrl: `/c/${catalog.slug}`,
     },
   });
+}
+
+async function uploadCatalogImage(
+  fastify: FastifyInstance,
+  userId: string,
+  field: 'logoUrl' | 'coverUrl',
+  folder: string,
+  reply: FastifyReply,
+  request: FastifyRequest
+) {
+  const catalog = await fastify.prisma.catalog.findUnique({ where: { userId } });
+  if (!catalog) return reply.status(404).send({ success: false, error: 'Catálogo não encontrado.' });
+
+  const parts = request.parts();
+  let uploadedUrl: string | null = null;
+
+  for await (const part of parts) {
+    if (part.type !== 'file') continue;
+    const cloudResult = await new Promise<any>((resolve, reject) => {
+      const stream = (fastify.cloudinary as any).uploader.upload_stream(
+        { folder: `catalogo/${catalog.slug}/${folder}`, resource_type: 'image', quality: 'auto', fetch_format: 'auto' },
+        (err: any, result: any) => { if (err) reject(err); else resolve(result); }
+      );
+      pipeline(part.file as unknown as Readable, stream).catch(reject);
+    });
+    uploadedUrl = cloudResult.secure_url;
+    break; // Só um arquivo
+  }
+
+  if (!uploadedUrl) return reply.status(400).send({ success: false, error: 'Nenhum arquivo enviado.' });
+
+  const updated = await fastify.prisma.catalog.update({
+    where: { userId },
+    data: { [field]: uploadedUrl },
+  });
+
+  return reply.send({ success: true, data: { url: uploadedUrl, catalog: updated } });
+}
+
+export async function uploadImageHandler(
+  this: FastifyInstance,
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { userId } = request.user as { userId: string };
+  return uploadCatalogImage(this, userId, 'coverUrl', 'cover', reply, request);
 }

@@ -17,7 +17,7 @@ export function HeroSection({ catalog }: HeroSectionProps) {
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
-    <section ref={ref} className="relative h-[90vh] min-h-[600px] overflow-hidden">
+    <section ref={ref} className="relative h-[70vh] sm:h-[80vh] md:h-[90vh] min-h-[500px] overflow-hidden">
       {/* Cover com parallax */}
       <motion.div style={{ y }} className="absolute inset-0">
         {catalog.coverUrl ? (
@@ -38,34 +38,29 @@ export function HeroSection({ catalog }: HeroSectionProps) {
       {/* Conteudo */}
       <motion.div
         style={{ opacity }}
-        className="relative z-10 h-full flex flex-col justify-end pb-16 px-6 md:px-12 max-w-5xl mx-auto"
+        className="relative z-10 h-full flex flex-col justify-end pb-10 sm:pb-16 px-5 sm:px-8 md:px-12 max-w-5xl mx-auto"
       >
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="flex items-end gap-6"
+          className="flex items-end gap-4 sm:gap-6"
         >
-          {catalog.logoUrl && (
-            <div className="relative w-20 h-20 md:w-28 md:h-28 flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 shadow-card">
-              <Image src={catalog.logoUrl} alt="Logo" fill className="object-cover" />
-            </div>
-          )}
-          <div>
+          <div className="min-w-0">
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-white/60 text-sm uppercase tracking-widest mb-1"
+              className="text-white/60 text-xs sm:text-sm uppercase tracking-widest mb-1"
             >
               Catálogo Digital
             </motion.p>
-            <h1 className="text-4xl md:text-6xl font-display font-bold text-white leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold text-white leading-tight">
               {catalog.name}
             </h1>
             {catalog.address && (
-              <p className="flex items-center gap-1.5 text-white/60 text-sm mt-2">
-                <MapPin size={14} />
+              <p className="flex items-center gap-1.5 text-white/60 text-xs sm:text-sm mt-1.5">
+                <MapPin size={13} />
                 {catalog.address}
               </p>
             )}
@@ -77,18 +72,18 @@ export function HeroSection({ catalog }: HeroSectionProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.7 }}
-            className="text-white/70 text-base md:text-lg mt-5 max-w-2xl leading-relaxed"
+            className="text-white/70 text-sm sm:text-base md:text-lg mt-4 sm:mt-5 max-w-2xl leading-relaxed line-clamp-3 sm:line-clamp-none"
           >
             {catalog.description}
           </motion.p>
         )}
       </motion.div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator - só desktop */}
       <motion.div
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 1.8 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2"
+        className="hidden sm:flex absolute bottom-6 left-1/2 -translate-x-1/2 w-6 h-10 border-2 border-white/30 rounded-full justify-center pt-2"
       >
         <div className="w-1 h-2 bg-white/50 rounded-full" />
       </motion.div>

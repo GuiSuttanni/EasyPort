@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Save, Globe, Phone, Instagram, Facebook, MapPin, Mail, Eye } from 'lucide-react';
-import { useGetMyCatalog, useUpdateCatalog } from '@/hooks/useCatalog';
+import { Save, Globe, Phone, Instagram, Eye, Loader2, ImagePlus } from 'lucide-react';
+import { useGetMyCatalog, useUpdateCatalog, useUploadCatalogImage } from '@/hooks/useCatalog';
 import { useAuthStore } from '@/store/auth.store';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const catalogSchema = z.object({
   name: z.string().min(2).max(150),
@@ -29,6 +30,9 @@ export default function CatalogoPage() {
   const { data: catalog, isLoading } = useGetMyCatalog();
   const updateCatalog = useUpdateCatalog();
   const catalogStore = useAuthStore((s) => s.catalog);
+  const [isPublished, setIsPublished] = useState(false);
+  const uploadImage = useUploadCatalogImage();
+  const coverRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<CatalogForm>({
     resolver: zodResolver(catalogSchema),
@@ -60,8 +64,21 @@ export default function CatalogoPage() {
         facebook: catalog.facebook || '',
         website: catalog.website || '',
       });
+      setIsPublished(catalog.isPublished ?? false);
     }
   }, [catalog, reset]);
+
+  const handleTogglePublish = () => {
+    const next = !isPublished;
+    setIsPublished(next);
+    updateCatalog.mutate({ isPublished: next } as any);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage.mutate(file);
+    e.target.value = '';
+  };
 
   const onSubmit = (values: CatalogForm) => {
     const data = Object.fromEntries(
@@ -128,6 +145,79 @@ export default function CatalogoPage() {
           </Link>
         )}
       </div>
+
+      {/* Toggle de publicação */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`flex items-center justify-between p-5 rounded-2xl border mb-6 ${
+          isPublished
+            ? 'bg-green-50 border-green-200'
+            : 'bg-yellow-50 border-yellow-200'
+        }`}
+      >
+        <div>
+          <p className={`font-semibold text-sm ${isPublished ? 'text-green-800' : 'text-yellow-800'}`}>
+            {isPublished ? '✓ Catálogo publicado' : '⚠ Catálogo não publicado'}
+          </p>
+          <p className={`text-xs mt-0.5 ${isPublished ? 'text-green-600' : 'text-yellow-600'}`}>
+            {isPublished
+              ? 'Seu catálogo está visível publicamente'
+              : 'Publique para que clientes possam acessar seu catálogo'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleTogglePublish}
+          disabled={updateCatalog.isPending}
+          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none disabled:opacity-60 ${
+            isPublished ? 'bg-green-500' : 'bg-gray-300'
+          }`}
+        >
+          {updateCatalog.isPending ? (
+            <Loader2 size={14} className="absolute inset-0 m-auto text-white animate-spin" />
+          ) : (
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                isPublished ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          )}
+        </button>
+      </motion.div>
+
+      {/* Aparência — Logo + Capa */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 overflow-hidden"
+      >
+        {/* Foto de capa */}
+        <div className="relative h-36 sm:h-48 bg-gradient-to-br from-primary-900 via-primary-700 to-accent-600 group">
+          {catalog?.coverUrl && (
+            <Image src={catalog.coverUrl} alt="Capa" fill className="object-cover" />
+          )}
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all flex items-center justify-center">
+            <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+            <button
+              type="button"
+              onClick={() => coverRef.current?.click()}
+              disabled={uploadImage.isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 text-white text-sm font-medium rounded-xl backdrop-blur-sm border border-white/20 transition-all disabled:opacity-60"
+            >
+              {uploadImage.isPending
+                ? <Loader2 size={15} className="animate-spin" />
+                : <ImagePlus size={15} />}
+              {catalog?.coverUrl ? 'Trocar foto de capa' : 'Adicionar foto de capa'}
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-4">
+          <p className="text-xs text-gray-400">Esta imagem será exibida como plano de fundo do seu catálogo público.</p>
+        </div>
+      </motion.div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {sections.map(({ title, fields }) => (

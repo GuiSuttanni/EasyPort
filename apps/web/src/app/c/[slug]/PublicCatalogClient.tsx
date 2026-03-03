@@ -7,7 +7,8 @@ import { ProjectCard } from '@/components/catalog/ProjectCard';
 import { MediaGallery } from '@/components/catalog/MediaGallery';
 import { ContactSection } from '@/components/catalog/ContactSection';
 import { Catalog, Project, Category, Media } from '@/types';
-import { BookOpen, Images } from 'lucide-react';
+import { BookOpen, Images, MessageCircle } from 'lucide-react';
+import { formatWhatsAppUrl } from '@/lib/utils';
 
 interface Props {
   catalog: Catalog;
@@ -43,7 +44,7 @@ export function PublicCatalogClient({ catalog }: Props) {
 
       {/* Sobre */}
       {catalog.story && (
-        <section className="py-16 px-6 md:px-12 max-w-5xl mx-auto">
+        <section className="py-12 sm:py-16 px-5 sm:px-8 md:px-12 max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -52,9 +53,9 @@ export function PublicCatalogClient({ catalog }: Props) {
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-primary-50 rounded-xl"><BookOpen size={20} className="text-primary-600" /></div>
-              <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900">Nossa Historia</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-gray-900">Nossa História</h2>
             </div>
-            <p className="text-gray-600 leading-relaxed text-base md:text-lg whitespace-pre-line max-w-3xl">
+            <p className="text-gray-600 leading-relaxed text-sm sm:text-base md:text-lg whitespace-pre-line max-w-3xl">
               {catalog.story}
             </p>
           </motion.div>
@@ -63,11 +64,11 @@ export function PublicCatalogClient({ catalog }: Props) {
 
       {/* Projetos em destaque */}
       {featuredProjects.length > 0 && (
-        <section className="py-10 px-6 md:px-12 bg-gradient-to-b from-primary-50/50 to-white">
+        <section className="py-10 px-5 sm:px-8 md:px-12 bg-gradient-to-b from-primary-50/50 to-white">
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-1">Destaques</h2>
-              <p className="text-gray-400 text-sm mb-8">Nossos melhores trabalhos</p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-gray-900 mb-1">Destaques</h2>
+              <p className="text-gray-400 text-sm mb-6 sm:mb-8">Nossos melhores trabalhos</p>
             </motion.div>
 
             <motion.div
@@ -75,7 +76,7 @@ export function PublicCatalogClient({ catalog }: Props) {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
             >
               {featuredProjects.slice(0, 4).map((project) => (
                 <motion.div key={project.id} variants={stagger.item}>
@@ -89,16 +90,16 @@ export function PublicCatalogClient({ catalog }: Props) {
 
       {/* Todos os projetos */}
       {allProjects.length > 0 && (
-        <section ref={projectsSec} className="py-16 px-6 md:px-12 max-w-5xl mx-auto">
+        <section ref={projectsSec} className="py-12 sm:py-16 px-5 sm:px-8 md:px-12 max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-1">Projetos</h2>
-            <p className="text-gray-400 text-sm mb-6">Explore o nosso portfolio completo</p>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-gray-900 mb-1">Projetos</h2>
+            <p className="text-gray-400 text-sm mb-5 sm:mb-6">Explore o nosso portfólio completo</p>
 
             {categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-8">
+              <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
                 <button
                   onClick={() => setActiveCategory(null)}
-                  className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl text-xs sm:text-sm font-medium transition-all ${
                     !activeCategory ? 'bg-primary-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -108,7 +109,7 @@ export function PublicCatalogClient({ catalog }: Props) {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all ${
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl text-xs sm:text-sm font-medium transition-all ${
                       activeCategory === cat.id ? 'bg-primary-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -125,7 +126,7 @@ export function PublicCatalogClient({ catalog }: Props) {
               variants={stagger.container}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
             >
               {filteredProjects.map((project) => (
                 <motion.div key={project.id} variants={stagger.item} layout>
@@ -139,12 +140,12 @@ export function PublicCatalogClient({ catalog }: Props) {
 
       {/* Galeria de midias soltas */}
       {(catalog.media ?? []).length > 0 && (
-        <section className="py-16 px-6 md:px-12 bg-gray-50">
+        <section className="py-12 sm:py-16 px-5 sm:px-8 md:px-12 bg-gray-50">
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-5 sm:mb-6">
                 <div className="p-2 bg-accent-50 rounded-xl"><Images size={20} className="text-accent-600" /></div>
-                <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900">Galeria</h2>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-gray-900">Galeria</h2>
               </div>
             </motion.div>
             <motion.div
@@ -152,14 +153,14 @@ export function PublicCatalogClient({ catalog }: Props) {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
             >
               {(catalog.media ?? []).map((item, i) => (
                 <motion.button
                   key={item.id}
                   variants={stagger.item}
                   onClick={() => { setSelectedProject({ id: '__gallery__', title: 'Galeria', media: catalog.media ?? [], isFeatured: false, order: 0, catalogId: catalog.id } as unknown as Project); setGalleryIndex(i); }}
-                  className="relative aspect-square rounded-2xl overflow-hidden bg-gray-200 group"
+                  className="relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-gray-200 group"
                 >
                   {item.type === 'IMAGE' ? (
                     <img src={item.url} alt={item.caption ?? ''} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -179,8 +180,26 @@ export function PublicCatalogClient({ catalog }: Props) {
 
       {/* Footer */}
       <footer className="bg-black py-6 px-6 text-center">
-        <p className="text-white/20 text-xs">Vitrine digital criada com CatalogoDigital.app</p>
+        <p className="text-white/20 text-xs">Vitrine digital criada com CatálogoDigital.app</p>
       </footer>
+
+      {/* Botão WhatsApp flutuante */}
+      {catalog.whatsapp && (
+        <motion.a
+          href={formatWhatsAppUrl(catalog.whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 1.5, type: 'spring', stiffness: 200 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 bg-green-500 hover:bg-green-600 text-white pl-3 pr-4 py-3 rounded-full shadow-lg transition-colors"
+        >
+          <MessageCircle size={22} fill="white" strokeWidth={0} />
+          <span className="text-sm font-semibold hidden sm:inline">Fale conosco</span>
+        </motion.a>
+      )}
 
       {/* Lightbox de projeto */}
       <AnimatePresence>

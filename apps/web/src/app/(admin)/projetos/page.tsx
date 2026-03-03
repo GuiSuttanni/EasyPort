@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Pencil, FolderOpen, Star, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, FolderOpen, Star, X, Loader2, ImagePlus, Image as ImageIcon } from 'lucide-react';
 import { useGetProjects, useCreateProject, useUpdateProject, useDeleteProject } from '@/hooks/useProjects';
 import { useGetCategories } from '@/hooks/useCategories';
+import { useUploadMedia, useDeleteMedia } from '@/hooks/useMedia';
 import { Project } from '@/types';
 import Image from 'next/image';
 
@@ -25,11 +26,19 @@ export default function ProjetosPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [form, setForm] = useState<ProjectFormData>({ title: '', description: '', categoryId: '', isFeatured: false });
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const uploadMedia = useUploadMedia({ projectId: activeProjectId ?? undefined });
+  const deleteMedia = useDeleteMedia();
 
   const resetForm = () => {
     setForm({ title: '', description: '', categoryId: '', isFeatured: false });
     setEditingProject(null);
     setShowForm(false);
+    setActiveProjectId(null);
+    setUploadProgress(0);
   };
 
   const openEdit = (project: Project) => {
@@ -40,6 +49,7 @@ export default function ProjetosPage() {
       isFeatured: project.isFeatured,
     });
     setEditingProject(project);
+    setActiveProjectId(project.id);
     setShowForm(true);
   };
 
@@ -57,9 +67,26 @@ export default function ProjetosPage() {
     if (editingProject) {
       await updateProject.mutateAsync({ id: editingProject.id, ...body });
     } else {
-      await createProject.mutateAsync(body);
+      const created = await createProject.mutateAsync(body);
+      setActiveProjectId(created.id);
+      setEditingProject(created);
+      return; // Fica no form para upload de imagens
     }
-    resetForm();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length || !activeProjectId) return;
+    await uploadMedia.mutateAsync({
+      files,
+      onProgress: setUploadProgress,
+    });
+    setUploadProgress(0);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    await deleteMedia.mutateAsync(mediaId);
   };
 
   const handleDelete = async (project: Project) => {
@@ -103,8 +130,57 @@ export default function ProjetosPage() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="space-y-4">
-                <div>
+              <div className="space-y-4">                {/* Upload de imagens — aparece após criar o projeto */}
+                {activeProjectId && (
+                  <div className="rounded-xl border-2 border-dashed border-primary-200 bg-primary-50 p-4">
+                    <p className="text-sm font-medium text-primary-700 mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} /> Fotos do projeto
+                    </p>
+
+                    {/* Thumbs das fotos já enviadas */}
+                    {(() => {
+                      const proj = projects?.find((p: Project) => p.id === activeProjectId);
+                      const medias = proj?.media ?? [];
+                      return medias.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {medias.map((m: any) => (
+                            <div key={m.id} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                              <Image src={m.url} alt={m.caption || ''} fill className="object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMedia(m.id)}
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                              >
+                                <Trash2 size={16} className="text-white" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                    <button
+                      type="button"
+                      disabled={uploadMedia.isPending}
+                      onClick={() => fileRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-primary-300 text-primary-700 rounded-xl text-sm font-medium hover:bg-primary-100 transition-all disabled:opacity-60"
+                    >
+                      {uploadMedia.isPending ? (
+                        <><Loader2 size={15} className="animate-spin" /> Enviando {uploadProgress}%</>
+                      ) : (
+                        <><ImagePlus size={15} /> Adicionar fotos</>
+                      )}
+                    </button>
+                  </div>
+                )}                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Título *</label>
                   <input
                     value={form.title}
@@ -151,14 +227,25 @@ export default function ProjetosPage() {
                     </label>
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-all"
-                >
-                  {isPending ? <Loader2 size={18} className="animate-spin" /> : null}
-                  {editingProject ? 'Salvar alterações' : 'Criar projeto'}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-all"
+                  >
+                    {isPending ? <Loader2 size={18} className="animate-spin" /> : null}
+                    {editingProject ? 'Salvar alterações' : 'Criar projeto e adicionar fotos'}
+                  </button>
+                  {activeProjectId && (
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all"
+                    >
+                      Concluir
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </motion.div>
