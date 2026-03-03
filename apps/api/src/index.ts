@@ -103,7 +103,7 @@ async function main() {
   try {
     const server = await buildApp();
     const port = parseInt(process.env.PORT || '3001', 10);
-    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+    const host = process.env.HOST || '0.0.0.0';
 
     await server.listen({ port, host });
     console.log(`Servidor rodando em http://${host}:${port}`);
