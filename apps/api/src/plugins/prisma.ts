@@ -1,0 +1,27 @@
+import fp from 'fastify-plugin';
+import { FastifyInstance } from 'fastify';
+import { PrismaClient } from '@prisma/client';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    prisma: PrismaClient;
+  }
+}
+
+export const prismaPlugin = fp(async (fastify: FastifyInstance) => {
+  const prisma = new PrismaClient({
+    log: process.env.NODE_ENV === 'development'
+      ? ['query', 'info', 'warn', 'error']
+      : ['warn', 'error'],
+  });
+
+  await prisma.$connect();
+
+  fastify.decorate('prisma', prisma);
+
+  fastify.addHook('onClose', async (instance) => {
+    await instance.prisma.$disconnect();
+  });
+
+  fastify.log.info('Prisma conectado ao banco de dados');
+});
