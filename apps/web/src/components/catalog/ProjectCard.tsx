@@ -7,7 +7,7 @@ import { Project } from '@/types';
 
 interface ProjectCardProps {
   project: Project;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
