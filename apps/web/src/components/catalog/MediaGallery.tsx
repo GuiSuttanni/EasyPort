@@ -11,10 +11,10 @@ interface MediaGalleryProps {
   media: Media[];
   title?: string;
   initialIndex?: number;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
-export function MediaGallery({ media, title, initialIndex = 0, onClose }: MediaGalleryProps) {
+export function MediaGallery({ media, title, initialIndex = 0, onClose = () => {} }: MediaGalleryProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: initialIndex, loop: true });
   const [current, setCurrent] = useState(initialIndex);
 
