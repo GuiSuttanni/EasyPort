@@ -229,7 +229,7 @@ export default function CatalogoPage() {
           >
             <h2 className="text-base font-semibold text-gray-900 mb-5">{title}</h2>
             <div className="space-y-4">
-              {fields.map(({ name, label, placeholder, type, rows }) => (
+              {fields.map(({ name, label, placeholder, type, rows } : { name: string; label: string; placeholder: string; type: string; rows?: number }) => (
                 <div key={name}>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
                   {type === 'textarea' ? (
